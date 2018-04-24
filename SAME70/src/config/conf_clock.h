@@ -70,7 +70,7 @@
 //#define CONFIG_SYSCLK_PRES          SYSCLK_PRES_3
 
 // ===== System Clock (MCK) Division Options     (Fmck = Fhclk / (SYSCLK_DIV))
-#define CONFIG_SYSCLK_DIV            1
+#define CONFIG_SYSCLK_DIV            300
 
 // ===== PLL0 (A) Options   (Fpll = (Fclk * PLL_mul) / PLL_div)
 // Use mul and div effective values here.

@@ -137,16 +137,16 @@ int main(void){
 	
 
 	/* Configura Leds */
-	LED_init(1);
+	LED_init(0);
 
 	/** Configura timer TC0, canal 1 */
 	//TC_init(TC0, ID_TC0, 0, 1.25);
 	
 	pmc_enable_periph_clk(ID_RTT);
 	//pmc_enable_periph_clk(ID_RTC);
-	rtt_init(RTT, 0x8000);
+	rtt_init(RTT, 0x6000);
 	rtt_disable_interrupt(RTT, RTT_MR_ALMIEN | RTT_MR_RTTINCIEN);
-	rtt_write_alarm_time(RTT, 2);
+	rtt_write_alarm_time(RTT, 1);
 	//rtt_sel_source(RTT, true);
 	rtt_enable_interrupt(RTT, RTT_MR_ALMIEN);
 	NVIC_EnableIRQ((IRQn_Type) ID_RTT);
@@ -154,11 +154,13 @@ int main(void){
 	
 	//printf("CPU: %d", sysclk_get_cpu_hz());
 	//printf("SYS: %d", sysclk_get_peripheral_hz());
-
+	
+	pmc_set_fast_startup_input(PMC_FSMR_RTTAL);
+	supc_set_wakeup_mode(SUPC, SUPC_WUMR_RTTEN_ENABLE);
 
 	while (1) {
-		pmc_sleep(SAM_PM_SMODE_SLEEP_WFI);
-		//pmc_sleep(SAM_PM_SMODE_BACKUP);
+		//pmc_sleep(SAM_PM_SMODE_SLEEP_WFI);
+		pmc_sleep(SAM_PM_SMODE_BACKUP);
 		/* Entrar em modo sleep */
 
 	//	pin_toggle(LED_PIO, LED_PIN_MASK);

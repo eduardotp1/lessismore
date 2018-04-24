@@ -22,6 +22,8 @@ src\ASF\sam\drivers\rtc\rtc.c
 
 src\ASF\sam\drivers\rtt\rtt.c
 
+src\ASF\sam\drivers\supc\supc.c
+
 src\ASF\sam\drivers\tc\tc.c
 
 src\ASF\sam\utils\cmsis\same70\source\templates\gcc\startup_same70.c

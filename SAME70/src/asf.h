@@ -96,6 +96,9 @@
 // From module: SAME70 XPLD LED support enabled
 #include <led.h>
 
+// From module: SUPC - Supply Controller
+#include <supc.h>
+
 // From module: System Clock Control - SAME70 implementation
 #include <sysclk.h>
 
