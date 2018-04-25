@@ -11,6 +11,11 @@
 #define LED_PIN		   30
 #define LED_PIN_MASK   (1<<LED_PIN)
 
+#define USART_COM_ID ID_USART1
+#define USART_COM    USART1
+
+
+static void USART1_init(void);
 
 /************************************************************************/
 /* VAR globais                                                          */
@@ -124,7 +129,88 @@ void RTT_Handler(void) {
 /**
 * Configura o RTC para funcionar com interrupcao de alarme
 */
+static void configure_console(void){
+	const usart_serial_options_t uart_serial_options = {
+		.baudrate = CONF_UART_BAUDRATE,
+#if (defined CONF_UART_CHAR_LENGTH)
+		.charlength = CONF_UART_CHAR_LENGTH,
+#endif
+		.paritytype = CONF_UART_PARITY,
+#if (defined CONF_UART_STOP_BITS)
+		.stopbits = CONF_UART_STOP_BITS,
+#endif
+	};
 
+
+	/* Configure console UART. */
+	stdio_serial_init(CONF_UART, &uart_serial_options);
+
+	/* Specify that stdout should not be buffered. */
+#if defined(__GNUC__)
+	setbuf(stdout, NULL);
+#else
+	/* Already the case in IAR's Normal DLIB default configuration: printf()
+	 * emits one character at a time.
+	 */
+#endif
+}
+
+
+static void USART1_init(void){
+	/* Configura USART1 Pinos */
+	sysclk_enable_peripheral_clock(ID_PIOB);
+	sysclk_enable_peripheral_clock(ID_PIOA);
+	pio_set_peripheral(PIOB, PIO_PERIPH_D, PIO_PB4); // RX
+	pio_set_peripheral(PIOA, PIO_PERIPH_A, PIO_PA21); // TX
+	MATRIX->CCFG_SYSIO |= CCFG_SYSIO_SYSIO4;
+
+	/* Configura opcoes USART */
+	const sam_usart_opt_t usart_settings = {
+		.baudrate       = 115200,
+		.char_length    = US_MR_CHRL_8_BIT,
+		.parity_type    = US_MR_PAR_NO,
+		.stop_bits   	= US_MR_NBSTOP_1_BIT	,
+		.channel_mode   = US_MR_CHMODE_NORMAL
+	};
+
+	/* Ativa Clock periferico USART0 */
+	sysclk_enable_peripheral_clock(USART_COM_ID);
+
+	/* Configura USART para operar em modo RS232 */
+	usart_init_rs232(USART_COM, &usart_settings, sysclk_get_peripheral_hz());
+
+	/* Enable the receiver and transmitter. */
+	usart_enable_tx(USART_COM);
+	usart_enable_rx(USART_COM);
+
+	/* map printf to usart */
+	ptr_put = (int (*)(void volatile*,char))&usart_serial_putchar;
+	ptr_get = (void (*)(void volatile*,char*))&usart_serial_getchar;
+
+	/* ativando interrupcao */
+	usart_enable_interrupt(USART_COM, US_IER_RXRDY);
+	NVIC_SetPriority(USART_COM_ID, 4);
+	NVIC_EnableIRQ(USART_COM_ID);
+
+}
+
+
+void USART1_Handler(void){
+	uint32_t ret = usart_get_status(USART_COM);
+
+	char c;
+
+	// Verifica por qual motivo entrou na interrupçcao
+	//  - Dadodisponível para leitura
+	if(ret & US_IER_RXRDY){
+		usart_serial_getchar(USART_COM, &c);
+
+		// -  Transmissoa finalizada
+		} else if(ret & US_IER_TXRDY){
+			return;
+
+	}
+}
 /************************************************************************/
 /* Main Code	                                                        */
 /************************************************************************/
@@ -135,7 +221,9 @@ int main(void){
 	/* Disable the watchdog */
 	WDT->WDT_MR = WDT_MR_WDDIS;
 	
-
+	/* Initialize the console uart */
+	configure_console();
+	USART1_init();
 	/* Configura Leds */
 	LED_init(0);
 
